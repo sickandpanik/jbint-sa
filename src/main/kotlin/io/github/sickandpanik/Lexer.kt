@@ -1,7 +1,5 @@
 package io.github.sickandpanik
 
-import java.io.File
-
 object Lexer {
     fun getTokens(programText: String): List<Token> {
         val tokens = mutableListOf<Token>()
@@ -17,33 +15,37 @@ object Lexer {
 
                 val filePos = FilePosition(lineNumber, block.range.first)
                 when {
-                    block.value in Keyword.stringToKeyword.keys -> tokens.add(Token.KeywordToken(filePos, Keyword.stringToKeyword[block.value]!!))
+                    block.value in TokenType.stringToKeyword.keys -> tokens.add(Token(TokenType.stringToKeyword[block.value]!!, filePos))
                     else -> {
-                        Regex("[a-z()+\\-*/<>=]|[0-9]+").findAll(block.value).forEach {
-                            val newFilePos = FilePosition(filePos.line, filePos.column + it.range.first)
-                            when {
-                                it.value == "(" -> tokens.add(Token.LeftParenthesisToken(newFilePos))
-                                it.value == ")" -> tokens.add(Token.RightParenthesisToken(newFilePos))
-                                it.value == "=" -> tokens.add(Token.KeywordToken(newFilePos, Keyword.EQUALS))
-                                it.value in Operation.stringToOperation.keys -> tokens.add(Token.OperationToken(newFilePos, Operation.stringToOperation[it.value]!!))
-                                it.value.all { it.isDigit() } -> {
-                                    try {
-                                        it.value.toInt()
-                                    } catch (e: NumberFormatException) {
-                                        throw LexerException("Numeric constant ${it.value} at $newFilePos not of Int type")
+                        tokens.addAll(
+                            Regex("[a-z()+\\-*/<>=]|[0-9]+").findAll(block.value).map {
+                                val newFilePos = FilePosition(filePos.line, filePos.column + it.range.first)
+                                when {
+                                    it.value == "(" -> Token(TokenType.LPAR, newFilePos)
+                                    it.value == ")" -> Token(TokenType.RPAR, newFilePos)
+                                    it.value == "=" -> Token(TokenType.EQUALS, newFilePos)
+                                    it.value in TokenType.stringToOperation.keys -> Token(TokenType.stringToOperation[it.value]!!, newFilePos)
+                                    it.value.all { it.isDigit() } -> {
+                                        try {
+                                            it.value.toInt()
+                                        } catch (e: NumberFormatException) {
+                                            throw LexerException("Numeric constant ${it.value} at $newFilePos not of Int type")
+                                        }
+                                        ConstantToken(newFilePos, it.value.toInt())
                                     }
-                                    tokens.add(Token.ConstantToken(newFilePos, it.value.toInt()))
+                                    it.value.all { it in ('a'..'z') } -> VariableToken(newFilePos, it.value)
+                                    else -> throw Error("Lexer internal error")
                                 }
-                                it.value.all { it in ('a'..'z') } -> tokens.add(Token.VariableToken(newFilePos, it.value))
-                                else -> throw Error("Lexer internal error")
                             }
-                        }
+                        )
                     }
                 }
             }
 
             lineNumber++
         }
+
+        tokens.add(Token(TokenType.EOF, FilePosition(lineNumber, 0)))
 
         return tokens
     }

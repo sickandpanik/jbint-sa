@@ -14,8 +14,23 @@ class UnusedAssignmentsAnalysis: CliktCommand() {
     override fun run() {
         val programText = file.readText()
 
-        Lexer.getTokens(programText).forEach {
+        val tokens = Lexer.getTokens(programText)
+
+        tokens.forEach {
             println(it)
+        }
+
+//        val program = AstProgram(AstStatementList(listOf(
+//            AstAssignment(AstVariable("a"), AstBinaryOp(Operation.ADD, AstConstant(2), AstConstant(2))),
+//            AstIfBlock(AstBinaryOp(Operation.GT, AstConstant(-3), AstConstant(1)), AstStatementList(listOf()))
+//        )))
+//        program.print()
+
+        val parser = Parser()
+        val program = parser.getProgram(tokens)
+
+        if (printAst) {
+            program.print()
         }
     }
 }
