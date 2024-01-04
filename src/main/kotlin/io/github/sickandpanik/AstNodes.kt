@@ -52,9 +52,9 @@ class AstStatementList(val statements: List<AstStatement>): AstNode()
 
 sealed class AstStatement: AstNode()
 
-class AstAssignment(val varName: AstVariable, val expr: AstExpression): AstStatement() {
+class AstAssignment(val variable: AstVariable, val expr: AstExpression): AstStatement() {
     override fun toString(): String {
-        return super.toString() + " ${varName.varName} = ${expr.expressionString()}"
+        return super.toString() + " ${variable.varName} = ${expr.expressionString()}"
     }
 }
 
